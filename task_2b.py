@@ -71,23 +71,25 @@ upper_range = {'Green':np.array([70,255,255]),
                'Orange': np.array([24, 255, 255]),
                'Gray': np.array([180, 18, 230])}
 
-checkpoints = {'A':[1,'L'],
-			   'B':[1,'R'],
-			   'C':[1,'L'],
-			   'D':[1,'R'],
+checkpoints = {'A':[0,'L'],
+			   'B':[0,'R'],
+			   'C':[0,'L'],
+			   'D':[0,'R'],
 			   'E':[1,'Y'],
-			   'F':[1,'R'],
-			   'G':[1,'L'],
-			   'H':[1,'R'],
-			   'I':[1,'Y'],
-			   'J':[1,'R'],
-			   'K':[1,'L'],
-			   'L':[1,'R'],
-			   'M':[1,'Y'],
-			   'N':[1,'R'],
-			   'O':[1,'L'],
-			   'P':[1,'R'],
+			   'F':[0,'R'],
+			   'G':[0,'L'],
+			   'H':[0,'R'],
+			   'I':[2,'Y'],
+			   'J':[0,'R'],
+			   'K':[0,'L'],
+			   'L':[0,'R'],
+			   'M':[3,'Y'],
+			   'N':[0,'R'],
+			   'O':[0,'L'],
+			   'P':[0,'R'],
 			   'S':[0]}
+
+shapes_qr = {'Pink Cuboid':'package_3','Orange Cone':'package_1','Blue Cylinder':'package_2'}
 
 def sharpen_img(img):
     sharpen_kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
@@ -150,6 +152,7 @@ def check_contours_1(img):
 
 def check_contours_2(img,dir):
 	img2=img.copy()
+	# img = img[0:512,106:406]
 	img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2BGR)
 	output_white = check_Color2(img2,'White') #Masking only the white parts of image
 	output_black = check_Color2(img,'Black') #Masking only the black part of image
@@ -189,7 +192,7 @@ def check_contours_2(img,dir):
 					if rect[-1]<=10 or rect[-1]==90:
 						flag1=True
 				else:
-					if rect[-1]<=8 or rect[-1]==90:
+					if rect[-1]>=81.5 or rect[-1]==90:
 						flag1=True
 	
 		
@@ -352,9 +355,9 @@ def turn(sim,dir):
 	else:
 		sign=1
 	
-	sim.setJointTargetVelocity(left_wheel,sign*0.1)
-	sim.setJointTargetVelocity(right_wheel,-sign*0.1)
-	time.sleep(2.5)
+	sim.setJointTargetVelocity(left_wheel,sign*0.125)
+	sim.setJointTargetVelocity(right_wheel,-sign*0.125)
+	time.sleep(3.7)
 
 	while True:
 		img = return_image(sim)
@@ -380,9 +383,14 @@ def turn_2(sim,dir):
 	i=0
 	
 	while True:
+		# img = return_image(sim)
+		# cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Sensor_View_A/SV_' + str(i) + ".jpg",img)
+		# i=i+1
 		img = return_image(sim)
-		cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Sensor_View_A/SV_' + str(i) + ".jpg",img)
-		i=i+1
+		flag=check_contours_2(img,dir)
+
+
+
 
 
 
@@ -412,6 +420,8 @@ def control_logic(sim):
 	##############  ADD YOUR CODE HERE  ##############
 	left_wheel=sim.getObjectHandle('left_joint')
 	right_wheel=sim.getObjectHandle('right_joint')
+	sim.setJointTargetVelocity(left_wheel,0)
+	sim.setJointTargetVelocity(right_wheel,0)
 	sim.setJointTargetVelocity(left_wheel,1.6)
 	sim.setJointTargetVelocity(right_wheel,1.615)
 	i=0
@@ -421,47 +431,61 @@ def control_logic(sim):
 
 
 	while True:
-		# turn(sim,'R')
-
-		# img = return_image(sim)
-		# cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Sensor_View_2B/SV_' + str(i) + ".jpg",img)
-		# i=i+1
-		# turn(sim)
-		# if ch=='S':
-		# 	sim.setJointTargetVelocity(left_wheel,0)
-		# 	sim.setJointTargetVelocity(right_wheel,0)
-		# 	break
 
 		img = return_image(sim)
 		
 		flag1 = check_contours_1(img) 
 		if flag1 == True:
-			if ch=='S':
-				sim.setJointTargetVelocity(left_wheel,0)
-				sim.setJointTargetVelocity(right_wheel,0)
-				break
-			# if ch=='E':
+			# if ch=='S':
 			# 	sim.setJointTargetVelocity(left_wheel,0)
 			# 	sim.setJointTargetVelocity(right_wheel,0)
-			# 	cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Sensor_View_2B/SV_' + str(i) + ".jpg",img)
-			# 	selfCorrecting(sim,checkpoints[ch][1])
+			# 	break
 
-			# else:
-			time.sleep(0.7)
+			# # else:
+			if checkpoints[ch][0]==0:
+				time.sleep(0.92) #0.825
+			else:
+				time.sleep(0.1)	
 			sim.setJointTargetVelocity(left_wheel,0)
 			sim.setJointTargetVelocity(right_wheel,0)
 			print("Checkpoint ",ch," Reached")
 
 			if checkpoints[ch][1]!='Y':
-				# if ch=='A':
-				# 	turn_2(sim,checkpoints[ch][1])
+				# # if ch=='A':
+				# # 	turn_2(sim,checkpoints[ch][1])
+				# # else:
+				# if ch=='B':
+				# 	sim.setJointTargetVelocity(left_wheel,0)
+				# 	sim.setJointTargetVelocity(right_wheel,0)
+				# 	turn_2(sim,'R')
 				# else:
 				turn(sim,checkpoints[ch][1])
 				selfCorrecting(sim,checkpoints[ch][1])
-
 			else:
-				print("Qr code region detected")
-			
+				# print("Qr code region detected")
+				sim.setJointTargetVelocity(left_wheel,0)
+				sim.setJointTargetVelocity(right_wheel,0)
+			# time.sleep(1)
+				img = return_image(sim)
+			# cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Test_Images/QR_before/qrb_' + ch + ".jpg",img)
+				arena_dummy_handle = sim.getObject("/Arena_dummy")
+				childscript_handle = sim.getScript(sim.scripttype_childscript, arena_dummy_handle, "")
+				st1 = "checkpoint " + ch
+				sim.callScriptFunction("activate_qr_code", childscript_handle, st1)
+				# time.sleep(1)
+				qr_message=read_qr_code(sim)
+				print("QR message at ",ch,": ",qr_message)
+				img = return_image(sim)
+				# cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Test_Images/QR_codes/qr_' + ch + ".jpg",img)
+				arena_dummy_handle = sim.getObject("/Arena_dummy")
+				childscript_handle = sim.getScript(sim.scripttype_childscript, arena_dummy_handle, "")
+				sim.callScriptFunction("deliver_package", childscript_handle, shapes_qr[qr_message], "checkpoint E")
+				arena_dummy_handle = sim.getObject("/Arena_dummy")
+				childscript_handle = sim.getScript(sim.scripttype_childscript, arena_dummy_handle, "")
+				st2 = "checkpoint " + ch
+				sim.callScriptFunction("deactivate_qr_code", childscript_handle, st2)
+
+
 			sim.setJointTargetVelocity(left_wheel,0)
 			sim.setJointTargetVelocity(right_wheel,0)
 			if checkpoints[ch][1] == 'L':
@@ -475,17 +499,6 @@ def control_logic(sim):
 				sim.setJointTargetVelocity(right_wheel,1.6)
 			keys.pop(0)
 			ch=keys[0]
-
-
-
-		
-
-					
-
-
-
-
-
 
 
 	##################################################
@@ -513,6 +526,28 @@ def read_qr_code(sim):
 	"""
 	qr_message = None
 	##############  ADD YOUR CODE HERE  ##############
+	left_wheel=sim.getObjectHandle('left_joint')
+	right_wheel=sim.getObjectHandle('right_joint')
+	sim.setJointTargetVelocity(left_wheel,0)
+	sim.setJointTargetVelocity(right_wheel,0)
+	sim.setJointTargetVelocity(left_wheel,0.035)
+	sim.setJointTargetVelocity(right_wheel,0.0035)
+	flag=False
+	while True:
+		image = return_image(sim)
+		for qrcode in decode(image):
+			qr_message = qrcode.data.decode('utf-8')
+			print("Qr message: ",qr_message)
+			if qr_message!=None:
+				flag=True
+				break
+		
+		if flag:
+			time.sleep(10)
+			sim.setJointTargetVelocity(left_wheel,0)
+			sim.setJointTargetVelocity(right_wheel,0)
+			break
+		
 
 	##################################################
 	return qr_message
