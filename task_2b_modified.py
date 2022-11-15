@@ -89,6 +89,9 @@ checkpoints = {'A':[1,'L'],
 			   'P':[1,'R'],
 			   'S':[0]}
 
+shapes_qr = {'Pink Cuboid':'package_3','Orange Cone':'package_1','Blue Cylinder':'package_2'}
+
+
 def sharpen_img(img):
     sharpen_kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
     sharpen = cv2.filter2D(img, -1, sharpen_kernel)
@@ -228,6 +231,7 @@ def return_angle(img,sim,i):
 	output_white = check_Color2(img,'White')
 	# output2 = check_Color2(img,'Black')
 	output_white = sharpen_img(output_white)
+	# output_white = output_white[0:512,136:376]
 	# output2 = sharpen_img(output2)
 	# for i in range(0,len(output2)):
 	# 	for j in range(0,len(output2[i])):
@@ -244,7 +248,7 @@ def return_angle(img,sim,i):
 	# Finding the contours
 
 	flag1=False
-	
+	angle=0
 	for c in contours1:
 		area = cv2.contourArea(c)
 		# Detecting the middle white rectangle in road
@@ -256,6 +260,7 @@ def return_angle(img,sim,i):
 			
 			if(abs(h-120))<=2:
 				print("Angle: ",rect[-1],i,sep=" ")
+
 				
 				if rect[-1]>=89.5 and rect[-1]<=90: #If angle of rectangle is between 75 and 90, stop rotating
 					cv2.rectangle(output_white,(x,y),(x+w,y+h),(0,0,255),1)
@@ -263,8 +268,57 @@ def return_angle(img,sim,i):
 					flag1=True
 					sim.setJointTargetVelocity(left_wheel,0)
 					sim.setJointTargetVelocity(right_wheel,0)
+					angle=rect[-1]
+				
+	return flag1,angle
 
-	return flag1
+def return_angle_2(img,sim,i):
+	left_wheel=sim.getObjectHandle('left_joint')
+	right_wheel=sim.getObjectHandle('right_joint')
+	output_white = check_Color2(img,'White')
+	# output2 = check_Color2(img,'Black')
+	output_white = sharpen_img(output_white)
+	# output_white = output_white[0:512,136:376]
+	# output2 = sharpen_img(output2)
+	# for i in range(0,len(output2)):
+	# 	for j in range(0,len(output2[i])):
+	# 		for k in range(0,len(output2[i][j])):
+	# 			if output2[i][j][k] == 0:
+	# 				continue
+	# 			else:
+	# 				output2[i][j]=np.array([255,255,255])
+	# 				break
+	gray1 = cv2.cvtColor(output_white, cv2.COLOR_BGR2GRAY)
+	_, threshold1 = cv2.threshold(gray1, 127, 255, cv2.THRESH_BINARY)
+	contours1, _ = cv2.findContours(
+    	threshold1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+	# Finding the contours
+
+	flag1=False
+	angle=0
+	for c in contours1:
+		area = cv2.contourArea(c)
+		# Detecting the middle white rectangle in road
+		if area >=1600 and area<=2700:
+			rect = cv2.minAreaRect(c)
+			x,y,w,h = cv2.boundingRect(c)
+			
+			#print("Angle: ",rect[-1])
+			
+			if(abs(h-120))<=2:
+				print("Angle: ",rect[-1],i,sep=" ")
+
+				
+				if rect[-1]>=89.5 and rect[-1]<=90: #If angle of rectangle is between 75 and 90, stop rotating
+					cv2.rectangle(output_white,(x,y),(x+w,y+h),(0,0,255),1)
+					cv2.imwrite(r'C:\Users\Swaroop\OneDrive\Desktop\Swaroop\BMS\EYRC 2022-23 Pharma Bot\PB_Task2_Windows\PB_Task2B_Windows\Img\imga'+str(i)+'.jpg',output_white)
+					flag1=True
+					sim.setJointTargetVelocity(left_wheel,0)
+					sim.setJointTargetVelocity(right_wheel,0)
+					angle=rect[-1]
+				
+	return flag1,angle
+
 
 			
 
@@ -354,47 +408,63 @@ def turn(sim,dir):
 	right_wheel=sim.getObjectHandle('right_joint')
 	sign=None
 	flag=None
-	if(dir=='L'):
-		sign=-1
-	else:
-		sign=1
+	# if(dir=='L'):
+	# 	sign=-1
+	# else:
+	# 	sign=1
 	
-	sim.setJointTargetVelocity(left_wheel,sign*1)   #0.1
-	sim.setJointTargetVelocity(right_wheel,-sign*1)  
+	sim.setJointTargetVelocity(left_wheel,-1)   #0.1
+	sim.setJointTargetVelocity(right_wheel,1)  
 	#time.sleep(2.5) #for 0.1
-	time.sleep(1.5) #1.7 #0.7
-	sim.setJointTargetVelocity(left_wheel,sign*0.035)   #0.1
-	sim.setJointTargetVelocity(right_wheel,-sign*0.035) 
+	time.sleep(1.1) #1.7 #0.7 
+	sim.setJointTargetVelocity(left_wheel,-0.035)   #0.1
+	sim.setJointTargetVelocity(right_wheel,0.035) 
 	i=0
+	prev=-1
 	while True:
 		img = return_image(sim)
-		flag=return_angle(img,sim,i)
+		flag,anglee=return_angle(img,sim,i)
 		i=i+1
-		if flag:
-			sim.setJointTargetVelocity(left_wheel,0)
-			sim.setJointTargetVelocity(right_wheel,0)
-			break
-	
+		if prev==89 or prev==0:
+			if flag:
+				sim.setJointTargetVelocity(left_wheel,0)
+				sim.setJointTargetVelocity(right_wheel,0)
+				break
+		prev=int(anglee)
 def turn_2(sim,dir):
 	left_wheel=sim.getObjectHandle('left_joint')
 	right_wheel=sim.getObjectHandle('right_joint')
 	sign=None
 	flag=None
 
-	if(dir=='L'):
-		sign=-1
-	else:
-		sign=1
+	# if(dir=='L'):
+	# 	sign=-1
+	# else:
+	# 	sign=1
 
-	sim.setJointTargetVelocity(left_wheel,sign*0.135)
-	sim.setJointTargetVelocity(right_wheel,-sign*0.135)
+	sim.setJointTargetVelocity(left_wheel,1)   #0.1
+	sim.setJointTargetVelocity(right_wheel,-1)  
+	#time.sleep(2.5) #for 0.1
+	time.sleep(1.1) #1.7 #0.7
+
+	sim.setJointTargetVelocity(left_wheel,0.035)
+	sim.setJointTargetVelocity(right_wheel,-0.035)
 	i=0
-
+	prev=-1
 	
 	while True:
+		# img = return_image(sim)
+		# cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Sensor_View_A/SV_' + str(i) + ".jpg",img)
+		# i=i+1
 		img = return_image(sim)
-		cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Sensor_View_A/SV_' + str(i) + ".jpg",img)
+		flag,anglee=return_angle_2(img,sim,i)
 		i=i+1
+		if prev==0 or prev==89:
+			if flag:
+				sim.setJointTargetVelocity(left_wheel,0)
+				sim.setJointTargetVelocity(right_wheel,0)
+				break
+		prev=int(anglee)
 
 
 
@@ -459,7 +529,7 @@ def control_logic(sim):
 			# 	selfCorrecting(sim,checkpoints[ch][1])
 
 			# else:
-			time.sleep(0.7) #0.7 #0.35
+			time.sleep(0.646) #0.7 #0.35
 			sim.setJointTargetVelocity(left_wheel,0)
 			sim.setJointTargetVelocity(right_wheel,0)
 			print("Checkpoint ",ch," Reached")
@@ -468,11 +538,44 @@ def control_logic(sim):
 				# if ch=='A':
 				# 	turn_2(sim,checkpoints[ch][1])
 				# else:
-				turn(sim,checkpoints[ch][1])
+				if checkpoints[ch][1]=='L':
+					turn(sim,'L')
+				else:
+					turn_2(sim,'R')
 				#selfCorrecting(sim,checkpoints[ch][1])
 
 			else:
-				print("Qr code region detected")
+				# print("Qr code region detected")
+				# print("Qr code region detected")
+				sim.setJointTargetVelocity(left_wheel,0)
+				sim.setJointTargetVelocity(right_wheel,0)
+				qr_message=None
+				while True:
+			# time.sleep(1)
+				# img = return_image(sim)
+			# cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Test_Images/QR_before/qrb_' + ch + ".jpg",img)
+					arena_dummy_handle = sim.getObject("/Arena_dummy")
+					childscript_handle = sim.getScript(sim.scripttype_childscript, arena_dummy_handle, "")
+					st1 = "checkpoint " + ch
+					print(sim.callScriptFunction("activate_qr_code", childscript_handle, st1),"huhuhu",sep=" ")
+					sim.setJointTargetVelocity(left_wheel,0)
+					sim.setJointTargetVelocity(right_wheel,0)
+					# time.sleep(1)
+					#qr_message=read_qr_code(sim)
+
+					print("QR message at ",ch,": ",qr_message)
+					img = return_image(sim)
+					if qr_message!=None:
+					# cv2.imwrite('/home/preetham/eYantra/PB_Task2B_Ubuntu/Test_Images/QR_codes/qr_' + ch + ".jpg",img)
+						arena_dummy_handle = sim.getObject("/Arena_dummy")
+						childscript_handle = sim.getScript(sim.scripttype_childscript, arena_dummy_handle, "")
+						sim.callScriptFunction("deliver_package", childscript_handle, shapes_qr[qr_message], "checkpoint E")
+						arena_dummy_handle = sim.getObject("/Arena_dummy")
+						childscript_handle = sim.getScript(sim.scripttype_childscript, arena_dummy_handle, "")
+						st2 = "checkpoint " + ch
+						sim.callScriptFunction("deactivate_qr_code", childscript_handle, st2)
+						break
+					
 			
 			sim.setJointTargetVelocity(left_wheel,0)
 			sim.setJointTargetVelocity(right_wheel,0)
@@ -525,7 +628,27 @@ def read_qr_code(sim):
 	"""
 	qr_message = None
 	##############  ADD YOUR CODE HERE  ##############
-
+	left_wheel=sim.getObjectHandle('left_joint')
+	right_wheel=sim.getObjectHandle('right_joint')
+	sim.setJointTargetVelocity(left_wheel,0)
+	sim.setJointTargetVelocity(right_wheel,0)
+	sim.setJointTargetVelocity(left_wheel,0.025)
+	sim.setJointTargetVelocity(right_wheel,0.025)
+	flag=False
+	while True:
+		image = return_image(sim)
+		for qrcode in decode(image):
+			qr_message = qrcode.data.decode('utf-8')
+			print("Qr message: ",qr_message)
+			if qr_message!=None:
+				flag=True
+				break
+		
+		if flag:
+			time.sleep(3.5) #10
+			sim.setJointTargetVelocity(left_wheel,0)
+			sim.setJointTargetVelocity(right_wheel,0)
+			break
 	##################################################
 	return qr_message
 
